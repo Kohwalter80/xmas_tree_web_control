@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta charset="UTF-8" http-equiv="X-UA-Compatible" content="ie=edge">
+    <link rel="shortcut icon" href="/favicon.png">
+    <title>Ajuda do Controle de Árvore de Natal</title>
+    <style>
+        body {
+            color: white;
+            background: rgb(30, 30, 30);
+        }
+        .ajuda {
+            margin: 30px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Ajuda do sistema de luzes de árvore de natal</h1>
+    Para todos os comandos, digite "http://arvoredenatal.local/<strong>página</strong>?<strong>variável1</strong>=<strong>valor1</strong>&<strong>variável2</strong>=<strong>valor2</strong>&...", onde:<br>
+    <ul>
+        <li>página:
+        <ul>
+            <li><strong>/</strong> -> retorna a interface gráfica padrão.</li>
+            <li><strong>/status</strong> -> retorna o status do sistema (não aceita parâmetros extra).</li>
+            <li><strong>/help</strong> -> retorna essa página de ajuda (não aceita parâmetros extra).</li>
+            <li><strong>/comandos</strong>, retorna o status de execução dos comandos passados.</li>
+            <li><strong>/musicas</strong>, retorna a lista das músicas registradas. Se for passada variável <i>"json"</i>, o valor é a string do arquivo JSON que contém a lista das músicas.</li>
+            <li><strong>/off</strong>, desliga tudo (árvore, estrela e música).</li>
+        </ul>
+        </li>
+        <br>
+        <li>variáveis:
+        <ul>
+            <li><strong>brilho</strong>
+            <ul>
+                <li>como valor, passar o percentual de brilho máximo (0 - 100).</li>
+            </ul>
+            </li>
+            <li><strong>volume</strong>
+            <ul>
+                <li>como valor, passar o percentual de volume da música (0 - 100).</li>
+            </ul>
+            </li>
+            <li><strong>mp3</strong>
+            <ul>
+                <li><i>play</i> -> reproduz a música</li>
+                <li><i>pause</i> -> pausa a música ou volta a reproduzir se estiver pausado</li>
+                <li><i>stop</i> -> encerra a reprodução</li>
+                <li><i>vup</i> -> aumenta volume</li>
+                <li><i>vdown</i> -> diminui volume</li>
+                <li><i>next</i> -> próxima música na lista</li>
+                <li><i>prev</i> -> música anterior na lista</li>
+            </ul>
+            </li>
+            <li><strong>musica</strong>
+                <ul>
+                    <li>como valor, passar o número da música que deseja tocar, começando de 1.</li>
+                </ul>
+            </li>
+            <li><strong>efeito_arvore</strong>
+            <ul>
+                <li><i>off</i> -> desliga os efeitos da árvore</li>
+                <li><i>uma</i> -> uma cor sólida (<i>cor1</i>)</li>
+                <li><i>duas</i> -> duas cores sólidas (<i>cor1</i> e <i>cor2</i>)</li>
+                <li><i>tres</i> -> três cores sólidas (<i>cor1</i>, <i>cor2</i> e <i>cor3</i>)</li>
+                <li><i>alt</i> -> efeito de alternar entre as cores <i>cor1</i> e <i>cor2</i></li>
+                <li><i>segue</i> -> efeito de seguir a música na <i>cor1</i></li>
+                <li><i>degrade</i> -> efeito degradê com a <i>cor1</i> na parte de cima e <i>cor2</i> na parte de baixo</li>
+                <li><i>fade</i>* -> efeito de fade da <i>cor1</i> para a <i>cor2</i> em X segundos</li>
+                <li><i>retro</i> -> efeito de luzes antigas, retrô</li>
+                <li><i>arco</i>* -> efeito arco-íris, que cicla em X segundos</li>
+                <li><i>onda</i>* -> efeito de onda arco-íris, que cicla em X segundos</li>
+                <li><i>spark</i> -> efeito "sparkling" na <i>cor1</i></li>
+                <li><i>shim</i> -> efeito "shimmer" de N leds de <i>cor2</i> no fundo de <i>cor1</i> (N sugerido = 20)</li>
+                <li><i>dissolve</i>* -> efeito de dissolução da <i>cor1</i> para a <i>cor2</i> em X segundos</li>
+                <li><i>dissol</i>* -> efeito de dissolução da <i>cor1</i> para a <i>cor2</i> em X segundos, com retorno abrupto para a <i>cor1</i> no final</li>
+            </ul>
+            *Os efeitos marcados requerem o tempo associado. Se não for informado, será assumido o tempo de 1s.
+            </li>
+            <li><strong>efeito_estrela</strong>
+            <ul>
+                <li><i>off</i> -> desliga os efeitos da estrela</li>
+                <li><i>uma</i> -> uma cor sólida (<i>cor4</i>)</li>
+                <li><i>rgb</i> -> mostra as cores RGB na estrela</li>
+                <li><i>alt</i> -> efeito de alternar entre as cores <i>cor4</i> e <i>cor5</i></li>
+                <li><i>fade</i>* -> efeito de fade da <i>cor4</i> para a <i>cor5</i> em X segundos. Se o efeito da árvore for o fade, o valor de X será ignorado.</li>
+                <li><i>circle</i>* -> efeito arco-íris circular em X segundos</li>
+                <li><i>arco</i>* -> efeito arco-íris que cicla em X segundos. Se o efeito da árvore for o arco-íris, o valor de X será ignorado.</li>
+                <li><i>radin</i>* -> efeito radial para dentro, ciclando em X segundos da <i>cor5</i> no fundo <i>cor4</i>. Se as cores forem preto, oscila nas cores do arco-íris.</li>
+                <li><i>radout</i>* -> efeito radial para fora, ciclando em X segundos da <i>cor5</i> no fundo <i>cor4</i>. Se as cores forem preto, oscila nas cores do arco-íris.</li>
+            </ul>
+            *Os efeitos marcados requerem o tempo associado. Se não for informado, será assumido o tempo de 1s.
+            </li>
+            <li><strong>tempo_arvore</strong>
+            <ul>
+                <li>como valor, passar o tempo, em segundos, maior do que 1, do efeito da árvore escolhido.</li>
+            </ul>
+            </li>
+            <li><strong>tempo_estrela</strong>
+            <ul>
+                <li>como valor, passar o tempo, em segundos, maior do que 1, do efeito da estrela escolhido.</li>
+            </ul>
+            </li>
+            <li><strong>cor1</strong> - <strong>cor5</strong>
+            <ul>
+                <li><i>corX=rrggbb</i> -> a cor é passada como sequência RGB em hexadecimal</li>
+                <li>cor1 a cor3 -> cores da árvore</li>
+                <li>cor4 e cor5 -> cores da estrela</li>
+            </ul>
+            </li>
+        </ul>
+    </ul>
+    <br>
+    Exemplos:
+    <ul class="ex">
+        <li><i>http://www.arvoredenatal.local</i> -> acessa a interface gráfica</li>
+        <li><i>http://www.arvoredenatal.local/off</i> -> desliga tudo</li>
+        <li><i>http://www.arvoredenatal.local/comandos?mp3=play</i> -> liga a música da árvore</li>
+        <li><i>http://www.arvoredenatal.local/comandos?brilho=50&volume=10&efeito_estrela=fade&tempo_estrela=2&cor4=000000&cor5=ff00ff</i> -> liga a estrela, com brilho de 50%, no efeito fade, ciclando a cada 2 segundos entre a cor preta (apagado) e a cor amarela, com a música baixa, em 10%.</li>
+        <li><i>http://www.arvoredenatal.local/comandos?efeito_arvore=arco&tempo_arvore=5&efeito_estrela=arco</i> -> liga a árvore e a estrela em efeito arco-íris, ciclando a cada 5 segundos.</li>
+        <li><i>http://www.arvoredenatal.local/comandos?musica=3</i> -> toca a terceira música da lista de músicas.</li>
+        <li><i>http://www.arvoredenatal.local/musicas?json={"1":"jingle%20bells","2":"merry%20christmas",...}</i> -> atualiza a lista de músicas para a primeira sendo "jingle bells", a segunda para "merry christmas" e assim por diante (espaços devem ser substituidos por "%20").</li>
+    </ul>
+    <button class="ajuda" onclick="location.href='/';">Interface Gráfica</button>
+</body>
+</html>

@@ -12,10 +12,11 @@
 #define max _max
 #endif
 
-//#define power_good 14 // D5
-#define power_on 12 // D6
+//#define power_good xx
+#define power_on 14 // D5
 #define DataPin 5 // D1
 #define syncPin 4 // D2 // consome 56uA
+#define rele 12 // D6
 
 #define led_Wifi 2 // D4
 #define led_geral 16 // D0
@@ -45,6 +46,7 @@ const uint32_t white = leds.Color(255, 255, 255);
 #define fator_rainbow_wave 0x11
 #define N_shimmer 20
 #define tempo_teste_fonte 3
+#define tempo_altofalantes_off 20
 
 #define SampleTime 1000/SampleRate
 
@@ -155,9 +157,9 @@ unsigned int tempos_retro[] = {2000,   1887,  2576, 2211};
 uint32_t cores[2][3][2];
 Efeito efeito;
 Estrela estrela;
-bool nef, nes, retorno_suave_dissolve, radial_in, aux_bool[2];
+bool nef, nes, retorno_suave_dissolve, radial_in, aux_bool[2], musica_on;
 volatile bool syncbool;
-unsigned long tref, t_off, aux_tref[2];
+unsigned long tref, t_off, aux_tref[2], t_off_fte;
 byte tempo_arvore, tempo_estrela, buf[10], aux_var, volume_mp3;
 unsigned int i, shimmer_num[N_shimmer], aux_int, aux_int_temp, di[NL];
 int temp_int;
@@ -405,6 +407,8 @@ void setup(void) {
   digitalWrite(led_Wifi, 1);
   digitalWrite(led_geral, 0);
   pinMode(syncPin, INPUT_PULLUP);
+  pinMode(rele, OUTPUT);
+  digitalWrite(rele, 0);
   Serial.begin(115200);
   leds.begin();
   leds.clear();
@@ -457,6 +461,7 @@ void setup(void) {
     //nef = false;
     leds.clear();
     leds.show();
+    digitalWrite(rele, 0);
     mp3(CMD_STOP);
     String html = "<html><head><meta charset=\"UTF-8\" http-equiv=\"refresh\" content=\"3;url=/\" /></head><body><h1>Desligando a árvore...</h1></body></html>";
     server.send(200, "text/html", html);
@@ -499,8 +504,11 @@ void setup(void) {
   nes = false;
   tempo_arvore = 1;
   tempo_estrela = 1;
+  musica_on = false;
+  mp3AjustaVolume(mp3_initial_volume);
   attachInterrupt(digitalPinToInterrupt(syncPin), syncfunc, FALLING);
   digitalWrite(led_geral, 1);
+  t_off_fte = millis();
   tref = millis();
   t_off = millis();
 }
@@ -605,6 +613,11 @@ void loop(void) {
     if (millis() - t_off > (1000 * tempo_fonte_off)) digitalWrite(power_on, 0);
   } else t_off = millis();
 #endif
+
+  // Se a caixa de som estiver ligada por mais de 20s sem música (depois do comando STOP), desliga ela.
+  if (!musica_on && digitalRead(rele)) {
+    if (millis() - t_off_fte > (1000 * tempo_altofalantes_off)) digitalWrite(rele, 0);
+  } else t_off_fte = millis();
 }
 
 bool fonte() {
@@ -706,6 +719,13 @@ bool mp3(byte comando, unsigned int info, bool confere) {
     if (buf[8] != 0xBA) return false;
     if (buf[9] != 0xEF) return false;
   }
+  if (comando == CMD_NEXT_SONG || comando == CMD_PREV_SONG || comando == CMD_PLAY_W_INDEX || comando == CMD_PLAY || comando == CMD_PAUSE || comando == CMD_PLAY_FOLDER_FILE || comando == CMD_PLAY_W_VOL || comando == CMD_SHUFFLE_FOLDER || comando == CMD_SHUFFLE_PLAY || comando == CMD_FOLDER_CYCLE || comando == CMD_SET_SNGL_CYCL || comando == CMD_PLAYING_N) {
+    musica_on = true;
+    digitalWrite(rele, 1);
+
+  } else if (comando == CMD_STOP) {
+    musica_on = false;
+  }
   return true;
 }
 
@@ -753,7 +773,7 @@ void solido(byte n, bool estrela) {
   } else {
     for (i = 0; i < NL; i++) leds.setPixelColor(i, cores[0][i % n][0]);
   }
-  //leds.show();
+  leds.show();
 }
 
 void swap_colors(byte linha) {

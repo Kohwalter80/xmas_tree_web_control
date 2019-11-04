@@ -12,87 +12,14 @@
             background-color: rgb(30, 30, 30);
             background-image: url("b.jpg");
             background-repeat: no-repeat;
-            background-size: 900px;
+            background-size: 100%;
             color: white;
         }
 
-        table#tabela_mp3 {
-            top: 0;
-            left: 0;
-        }
-
-        table#tabela_arvore {
-            top: 230px;
-            left: 220px;
-            display: none;
-
-        }
-
-        table#tabela_estrela {
-            top: 10px;
-            left: 300px;
-            display: none;
-        }
-
-        table#tabela_geral {
-            top: 470px;
-            left: 0px;
-        }
-
-        button#ajuda {
-            position: absolute;
-            top: 560px;
-        }
-
-        div#ip {
-            position: absolute;
-            top: 570px;
-            left: 150px;
-            font-size: 12px;
-            margin-bottom: 15px;
-            color: white;
-        }
-
-        div.marcador {
-            position: absolute;
-        }
-
-        div.estrela {
-            top: 39px;
-            left: 600px;
-            height: 50px;
-            width: 50px;
-        }
-
-        div.arvore {
-            top: 50px;
-            left: 575px;
-            width: 100px;
-            height: 230px;
-            transform: perspective(20px) rotateX(6deg);
-            margin: 0;
-        }
-
-        td.mp3 button {
-            width: 45px;
-            padding: 0;
-            margin: 0;
-            text-align: center;
-            font-weight: bold;
-        }
-
-        #musicas {
-            width: 245px;
-        }
-
-        #brilho {
-            width: 98%;
-            margin: 1%;
-        }
-
-        #volume {
-            height: 100%;
-            margin: 0px;
+        @media screen and (max-width: 510px) {
+            body {
+                background-size: 500px;
+            }
         }
 
         table {
@@ -109,8 +36,87 @@
             background: rgb(40, 40, 40);
         }
 
+        table#tabela_mp3 {
+            top: 0;
+            left: 0;
+        }
+
+        td.mp3 button {
+            width: 45px;
+            padding: 0;
+            margin: 0;
+            text-align: center;
+            font-weight: bold;
+        }
+
+        #musicas {
+            width: 245px;
+        }
+
+        #volume {
+            height: 100%;
+            margin: 0px;
+        }
+
         input.in {
             width: 50px;
+        }
+
+        table#tabela_arvore {
+            top: 230px;
+            left: 220px;
+            display: none;
+
+        }
+
+        div.arvore {
+            top: 50px;
+            left: 575px;
+            width: 100px;
+            height: 230px;
+            transform: perspective(20px) rotateX(6deg);
+            margin: 0;
+        }
+
+        table#tabela_estrela {
+            top: 10px;
+            left: 300px;
+            display: none;
+        }
+
+        div.estrela {
+            top: 39px;
+            left: 600px;
+            height: 50px;
+            width: 50px;
+        }
+
+        table#tabela_geral {
+            top: 470px;
+            left: 0px;
+        }
+
+        #brilho {
+            width: 98%;
+            margin: 1%;
+        }
+
+        div#ip {
+            position: absolute;
+            top: 570px;
+            left: 150px;
+            font-size: 12px;
+            margin-bottom: 15px;
+            color: white;
+        }
+
+        button#ajuda {
+            position: absolute;
+            top: 560px;
+        }
+
+        div.marcador {
+            position: absolute;
         }
     </style>
     <script>

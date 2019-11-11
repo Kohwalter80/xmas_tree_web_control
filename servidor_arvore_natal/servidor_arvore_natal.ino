@@ -434,7 +434,7 @@ void setup(void) {
     Serial.println("MP3 working ok.");
   } else {
     Serial.println("MP3 not working.");
-    //erro(Mp3);
+    erro(Mp3);
   }
   digitalWrite(led_Wifi, 0);
   WiFiManager wfm;
@@ -504,13 +504,13 @@ void setup(void) {
   nes = false;
   tempo_arvore = 1;
   tempo_estrela = 1;
-  musica_on = false;
   mp3AjustaVolume(mp3_initial_volume);
   attachInterrupt(digitalPinToInterrupt(syncPin), syncfunc, FALLING);
   digitalWrite(led_geral, 1);
   t_off_fte = millis();
   tref = millis();
   t_off = millis();
+  musica_on = false;
 }
 
 void loop(void) {
@@ -616,7 +616,7 @@ void loop(void) {
 
   // Se a caixa de som estiver ligada por mais de 20s sem música (depois do comando STOP), desliga ela.
   if (!musica_on && digitalRead(rele)) {
-    if (millis() - t_off_fte > (1000 * tempo_altofalantes_off)) digitalWrite(rele, 0);
+    if ((millis() - t_off_fte) > long(1000 * tempo_altofalantes_off)) digitalWrite(rele, 0);
   } else t_off_fte = millis();
 }
 
@@ -719,12 +719,25 @@ bool mp3(byte comando, unsigned int info, bool confere) {
     if (buf[8] != 0xBA) return false;
     if (buf[9] != 0xEF) return false;
   }
-  if (comando == CMD_NEXT_SONG || comando == CMD_PREV_SONG || comando == CMD_PLAY_W_INDEX || comando == CMD_PLAY || comando == CMD_PAUSE || comando == CMD_PLAY_FOLDER_FILE || comando == CMD_PLAY_W_VOL || comando == CMD_SHUFFLE_FOLDER || comando == CMD_SHUFFLE_PLAY || comando == CMD_FOLDER_CYCLE || comando == CMD_SET_SNGL_CYCL || comando == CMD_PLAYING_N) {
-    musica_on = true;
-    digitalWrite(rele, 1);
-
-  } else if (comando == CMD_STOP) {
-    musica_on = false;
+  switch (comando) {
+    case CMD_PLAY:
+    case CMD_PAUSE:
+    case CMD_NEXT_SONG:
+    case CMD_PREV_SONG:
+    case CMD_PLAY_W_INDEX:
+    case CMD_PLAY_W_VOL:
+    case CMD_PLAY_FOLDER_FILE:
+    case CMD_PLAYING_N:
+    case CMD_SHUFFLE_FOLDER:
+    case CMD_SHUFFLE_PLAY:
+    case CMD_FOLDER_CYCLE:
+    case CMD_SET_SNGL_CYCL:
+      musica_on = true;
+      digitalWrite(rele, 1);
+      break;
+    case CMD_STOP:
+      musica_on = false;
+      break;
   }
   return true;
 }

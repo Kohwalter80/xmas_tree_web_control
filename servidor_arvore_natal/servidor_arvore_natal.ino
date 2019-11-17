@@ -41,6 +41,7 @@ const uint32_t white = leds.Color(255, 255, 255);
 #define n_segue_musica 4
 #define tempo_alternar 1000
 #define tempo_dissolve_2 2000
+#define tempo_colorido 3000
 #define tempo_fonte_off 10
 #define brilho_inicial 0x60
 #define fator_rainbow_wave 0x11
@@ -51,7 +52,7 @@ const uint32_t white = leds.Color(255, 255, 255);
 #define SampleTime 1000/SampleRate
 
 // Tabelas de relação entre efeito e string
-const String tabela1[] = {"off", "uma", "duas", "tres", "arco", "onda", "retro", "alt", "degrade", "segue", "spark", "dissol", "fade", "shim"};
+const String tabela1[] = {"off", "uma", "duas", "tres", "arco", "onda", "retro", "alt", "degrade", "segue", "spark", "dissol", "fade", "shim",      "trifade", "trialt", "colorido"};
 const String tabela2[] = {"off", "uma", "duas", "tres", "alt", "fade", "rgb", "arco", "circle", "rad", "onda"};
 
 // Definição dos efeitos geral
@@ -69,7 +70,10 @@ enum Efeito : byte {
   sparkling,
   dissolve,
   fade,
-  shimmer
+  shimmer,
+  trifade,
+  trialt,
+  colorido
 };
 
 // Definição dos efeitos estrela
@@ -154,7 +158,7 @@ uint32_t cores_retro[] = {      red, orange, green, blue};
 unsigned int tempos_retro[] = {2000,   1887,  2576, 2211};
 #define n_retro 4
 
-uint32_t cores[2][3][2];
+uint32_t cores[2][3][2], cor_temp;
 Efeito efeito;
 Estrela estrela;
 bool nef, nes, retorno_suave_dissolve, radial_in, aux_bool[2], musica_on;
@@ -241,41 +245,26 @@ String processarComandos() {
         case '1':
           cores[0][0][1] = string2cor(server.arg(a));
           cores[0][0][0] = cores[0][0][1];
-          //message += "Cor1 alterada para #";
-          //message += server.arg(a);
-          //message += "\n";
           break;
         case '2':
           cores[0][1][1] = string2cor(server.arg(a));
           cores[0][1][0] = cores[0][1][1];
-          //message += "Cor2 alterada para #";
-          //message += server.arg(a);
-          //message += "\n";
           break;
         case '3':
           cores[0][2][1] = string2cor(server.arg(a));
           cores[0][2][0] = cores[0][2][1];
-          //message += "Cor3 alterada para #";
-          //message += server.arg(a);
-          //message += "\n";
           break;
         case '4':
           cores[1][0][1] = string2cor(server.arg(a));
           cores[1][0][0] = cores[1][0][1] & 0xffL;
           cores[1][0][0] += (cores[1][0][1] >> 8) & 0xff00L;
           cores[1][0][0] += (cores[1][0][1] << 8) & 0xff0000L;
-          //message += "Cor4 alterada para #";
-          //message += server.arg(a);
-          //message += "\n";
           break;
         case '5':
           cores[1][1][1] = string2cor(server.arg(a));
           cores[1][1][0] = cores[1][1][1] & 0xffL;
           cores[1][1][0] += (cores[1][1][1] >> 8) & 0xff00L;
           cores[1][1][0] += (cores[1][1][1] << 8) & 0xff0000L;
-          //message += "Cor5 alterada para #";
-          //message += server.arg(a);
-          //message += "\n";
           break;
       }
     } else if (server.argName(a).startsWith("tempo_")) {
@@ -284,17 +273,11 @@ String processarComandos() {
         tempo_arvore = max(1, tempo_arvore);
         tempo_arvore = min(600, tempo_arvore);
         nef = true;
-        //message += "Tempo da árvore alterado para: ";
-        //message += tempo_arvore;
-        //message += "\n";
       } else if (server.argName(a).substring(6) == "estrela") {
         tempo_estrela = server.arg(a).toInt();
         tempo_estrela = max(1, tempo_estrela);
         tempo_estrela = min(600, tempo_estrela);
         nes = true;
-        //message += "Tempo da estrela alterado para: ";
-        //message += tempo_estrela;
-        //message += "\n";
       }
     } else if (server.argName(a) == "mp3") {
       byte cc = 0;
@@ -344,9 +327,6 @@ String processarComandos() {
           }
         }
       }
-      //message += "\"efeito_arvore\":\"";
-      //message += server.arg(a);
-      //message += "\",";
     } else if (server.argName(a) == "efeito_estrela") {
       tt[1] = true;
       if (server.arg(a).startsWith("rad")) {
@@ -360,9 +340,6 @@ String processarComandos() {
           }
         }
       }
-      //message += "\"efeito_estrela\":\"";
-      //message += server.arg(a);
-      //message += "\",";
     } else if (server.argName(a) == "musica") {
       temp_int = server.arg(a).toInt();
       temp_int = max(0, temp_int);
@@ -410,11 +387,15 @@ void setup(void) {
   pinMode(rele, OUTPUT);
   digitalWrite(rele, 0);
   Serial.begin(115200);
+  Serial.println();
+  Serial.println("Inicializando...");
   leds.begin();
   leds.clear();
   leds.show();
   leds.setBrightness(brilho_inicial);
+  Serial.println("LEDs configurados.");
   delay(1000);
+  Serial.println("Configurando MP3...");
   mp3Serial.begin(9600);
   mp3Serial.setTimeout(30);
 #if defined(power_on) && defined(power_good)
@@ -431,9 +412,9 @@ void setup(void) {
   delay(200);
   mp3_ok = mp3_ok && mp3AjustaVolume(mp3_initial_volume);
   if (mp3_ok) {
-    Serial.println("MP3 working ok.");
+    Serial.println("MP3 ok.");
   } else {
-    Serial.println("MP3 not working.");
+    Serial.println("MP3 com erro.");
     erro(Mp3);
   }
   digitalWrite(led_Wifi, 0);
@@ -457,8 +438,6 @@ void setup(void) {
     Serial.println("Desligando tudo.");
     efeito = nenhum;
     estrela = e_nenhum;
-    //nes = false;
-    //nef = false;
     leds.clear();
     leds.show();
     digitalWrite(rele, 0);
@@ -491,7 +470,7 @@ void setup(void) {
     server.send(404, "text/html", "Essa página não existe.");
   });
   server.begin();
-  Serial.println("HTTP server started");
+  Serial.println("Servidor HTTP inicializado.");
   digitalWrite(led_Wifi, 1);
   if (SPIFFS.begin()) {
     Serial.println("File system working ok.");
@@ -511,6 +490,7 @@ void setup(void) {
   tref = millis();
   t_off = millis();
   musica_on = false;
+  Serial.println("Inicialização concluida.");
 }
 
 void loop(void) {
@@ -560,16 +540,25 @@ void loop(void) {
             arvore_segue();
             break;
           case alternar:
-            arvore_alternar();
+            arvore_alt(2);
             break;
           case dissolve:
             arvore_dissolve();
             break;
           case fade:
-            arvore_fade();
+            arvore_fade(2);
             break;
           case shimmer:
             arvore_shimmer();
+            break;
+          case trifade:
+            arvore_fade(3);
+            break;
+          case trialt:
+            arvore_alt(3);
+            break;
+          case colorido:
+            arvore_colorido();
             break;
         }
       }
@@ -789,10 +778,17 @@ void solido(byte n, bool estrela) {
   leds.show();
 }
 
-void swap_colors(byte linha) {
-  cores[linha][2][0] = cores[linha][0][0];
-  cores[linha][0][0] = cores[linha][1][0];
-  cores[linha][1][0] = cores[linha][2][0];
+void shift_colors(byte linha, bool ciclo) {
+  if (ciclo) {
+    cor_temp = cores[linha][2][0];
+    cores[linha][2][0] = cores[linha][1][0];
+    cores[linha][1][0] = cores[linha][0][0];
+    cores[linha][0][0] = cor_temp;
+  } else {
+    cores[linha][2][0] = cores[linha][0][0];
+    cores[linha][0][0] = cores[linha][1][0];
+    cores[linha][1][0] = cores[linha][2][0];
+  }
 }
 
 uint32_t hue2rgb(byte h) {
@@ -827,6 +823,11 @@ void arvore_retro() {
     j = i % n_retro;
     leds.setPixelColor(i, (e[j]) ? black : cores_retro[j]);
   }
+}
+
+void arvore_colorido() {
+  aux_int = (tref / (1000 * tempo_arvore)) % n_retro;
+  for (i = 0; i < NL; i++) leds.setPixelColor(i, cores_retro[(i + aux_int) % n_retro]);
 }
 
 void arvore_rainbow() {
@@ -870,18 +871,24 @@ void arvore_segue() {
   nef = false;
 }
 
-void arvore_alternar() {
-  aux_bool[0] = (tref / tempo_alternar) & 1;
-  for (i = 0; i < NL; i++) leds.setPixelColor(i, (aux_bool[0] ^ (i & 1)) ? black : cores[0][aux_bool[0]][0]);
+//void arvore_alternar() {
+//  aux_bool[0] = (tref / tempo_alternar) & 1;
+//  for (i = 0; i < NL; i++) leds.setPixelColor(i, (aux_bool[0] ^ (i & 1)) ? black : cores[0][aux_bool[0]][0]);
+//}
+
+void arvore_alt(byte n_cores) {
+  aux_int = (tref / tempo_alternar) % n_cores;
+  for (i = 0; i < NL; i++) leds.setPixelColor(i, (i % n_cores == aux_int) ? cores[0][aux_int][0] : black);
 }
 
-void arvore_fade() {
+void arvore_fade(byte n_cores) {
+  aux_int %= n_cores - 1;
   if (tref - aux_tref[0] <= (tempo_arvore * 1200)) {
-    cores[0][2][0] = colorSlope(cores[0][0][0], cores[0][1][0], min(1.0, float(tref - aux_tref[0]) / float(tempo_arvore * 1000)));
-    for (i = 0; i < NL; i++) leds.setPixelColor(i, cores[0][2][0]);
+    cor_temp = colorSlope(cores[0][aux_int][0], cores[0][aux_int + 1][0], min(1.0, float(tref - aux_tref[0]) / float(tempo_arvore * 1000)));
+    for (i = 0; i < NL; i++) leds.setPixelColor(i, cor_temp);
   } else {
     aux_tref[0] = tref;
-    swap_colors(0);
+    shift_colors(0, (n_cores != 2));
   }
 }
 
@@ -926,7 +933,7 @@ void arvore_dissolve() {
     if (tref - aux_tref[0] > tempo_dissolve_2) {
       montaVetor();
       if (retorno_suave_dissolve) {
-        swap_colors(0);
+        shift_colors(0, false);
       } else {
         solido(1, false);
       }
@@ -968,7 +975,7 @@ void estrela_fade() {
     for (i = NL; i < NL + NE; i++) leds.setPixelColor(i, cores[1][2][0]);
   } else {
     aux_tref[1] = tref;
-    swap_colors(1);
+    shift_colors(1, false);
   }
 }
 

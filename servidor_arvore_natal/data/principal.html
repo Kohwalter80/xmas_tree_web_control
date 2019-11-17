@@ -120,10 +120,10 @@
             var e
             if (!x) {
                 e = v("ef_arv")
-                d(e, ["off", "retro", "arco", "onda"], false, "c1")
+                d(e, ["off", "retro", "arco", "onda", "colorido"], false, "c1")
                 d(e, ["duas", "tres", "alt", "degrade", "fade", "shim", "dissol"], true, "c2")
-                d(e, ["tres"], true, "c3")
-                d(e, ["fade", "arco", "onda", "dissol"], true, "t1")
+                d(e, ["tres", "trifade", "trialt"], true, "c3")
+                d(e, ["fade", "arco", "onda", "dissol", "trifade", "colorido"], true, "t1")
                 d(e, ["dissol"], true, "cb1")
             } else {
                 e = v("ef_est")
@@ -137,7 +137,7 @@
             var e = v("ef_arv")
             var m = "efeito_arvore=" + e
             if (e == "dissol" && b("cba").checked) m += "ve"
-            if (["fade", "arco", "onda", "shim", "dissol"].indexOf(e) >= 0) m += "&tempo_arvore=" + s("dt1")
+            if (["fade", "arco", "onda", "shim", "dissol", "trifade", "colorido"].indexOf(e) >= 0) m += "&tempo_arvore=" + s("dt1")
             e = v("ef_est")
             m += "&efeito_estrela=" + e
             if (e == "rad") m += ((b("cbe").checked) ? "in" : "out")
@@ -192,10 +192,13 @@
                                             <option value="duas">Duas Cores</option>
                                             <option value="tres">Três Cores</option>
                                             <option value="alt">Alterna</option>
+                                            <option value="trialt">Alterna 3</option>
                                             <option value="segue">Sincronizado</option>
                                             <option value="degrade">Degradê</option>
                                             <option value="fade">Fade</option>
+                                            <option value="trifade">Fade 3</option>
                                             <option value="retro">Retrô</option>
+                                            <option value="colorido">Colorido</option>
                                             <option value="arco">Arco-Íris</option>
                                             <option value="onda">Onda</option>
                                             <option value="spark">Sparkling</option>
@@ -257,7 +260,7 @@
                                 </tr>
                                 <tr>
                                     <td colspan="2" id="cb2"><input type="checkbox" id="cbe" checked><span
-                                            id="tcb2">Radial de fora para dentro</span></input></td>
+                                            id="tcb2">Radial de dentro para fora</span></input></td>
                                 </tr>
                             </table>
                         </td>

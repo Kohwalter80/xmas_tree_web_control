@@ -65,6 +65,7 @@
         }
     </style>
     <script>
+        var lt = ["fade", "arco", "onda", "shim", "dissol", "trifade", "colorido", "wipe_up", "wipe_down", "sweep", "saw_up", "saw_down", "blink_rainbow", "chase_rainbow_up", "chase_rainbow_down", "running_up", "running_down"]
         function v(x) { return b(x).value }
         function b(s) { return document.getElementById(s) }
         function s(x) { return v(x).toString() }
@@ -120,10 +121,10 @@
             var e
             if (!x) {
                 e = v("ef_arv")
-                d(e, ["off", "retro", "arco", "onda", "colorido"], false, "c1")
-                d(e, ["duas", "tres", "alt", "degrade", "fade", "shim", "dissol"], true, "c2")
+                d(e, ["off", "retro", "arco", "onda", "colorido", "blink_rainbow", "twinkle_color"], false, "c1")
+                d(e, ["duas", "tres", "alt", "degrade", "fade", "shim", "dissol", "trifade", "trialt", "wipe_up", "wipe_down", "sweep", "saw_up", "saw_down", "chase_rainbow_up", "chase_rainbow_down", "running_up", "running_down", "scanner", "twinkle_fox"], true, "c2")
                 d(e, ["tres", "trifade", "trialt"], true, "c3")
-                d(e, ["fade", "arco", "onda", "dissol", "trifade", "colorido"], true, "t1")
+                d(e, lt, true, "t1")
                 d(e, ["dissol"], true, "cb1")
             } else {
                 e = v("ef_est")
@@ -137,7 +138,7 @@
             var e = v("ef_arv")
             var m = "efeito_arvore=" + e
             if (e == "dissol" && b("cba").checked) m += "ve"
-            if (["fade", "arco", "onda", "shim", "dissol", "trifade", "colorido"].indexOf(e) >= 0) m += "&tempo_arvore=" + s("dt1")
+            if (lt.indexOf(e) >= 0) m += "&tempo_arvore=" + s("dt1")
             e = v("ef_est")
             m += "&efeito_estrela=" + e
             if (e == "rad") m += ((b("cbe").checked) ? "in" : "out")
@@ -164,7 +165,7 @@
                 <button onclick="cb('next')">>></button>
             </td>
             <td rowspan="2">
-                <input type="range" min="0" max="30" id="volume" onmouseup="ch(this.id)" orient="vertical" step="1">
+                <input type="range" min="0" max="30" id="volume" onchange="ch(this.id)" orient="vertical" step="1">
             </td>
         </tr>
         <tr>
@@ -204,6 +205,19 @@
                                             <option value="spark">Sparkling</option>
                                             <option value="shim">Shimmer</option>
                                             <option value="dissol">Dissolve</option>
+                                            <option value="wipe_up">Wipe Sobe</option>
+                                            <option value="wipe_down">Wipe Desce</option>
+                                            <option value="sweep">Sweep</option>
+                                            <option value="saw_up">Sawtooth Sobe</option>
+                                            <option value="saw_down">Sawtooth Desce</option>
+                                            <option value="blink_rainbow">Blink Rainbow</option>
+                                            <option value="chase_rainbow_up">Chase Rainbow Up</option>
+                                            <option value="chase_rainbow_down">Chase Rainbow Down</option>
+                                            <option value="running_up">Running Up</option>
+                                            <option value="running_down">Running Down</option>
+                                            <option value="scanner">Scanner</option>
+                                            <option value="twinkle_color">Twinkle Color</option>
+                                            <option value="twinkle_fox">Twinkle Fox</option>
                                         </select>
                                     </td>
                                 </tr>
@@ -280,7 +294,7 @@
                         </td>
                         <td>
                             <div>Controle de Brilho Máximo</div>
-                            <input type="range" min="1" max="255" id="brilho" onmouseup="ch(this.id)">
+                            <input type="range" min="1" max="255" id="brilho" onchange="ch(this.id)">
                         </td>
                         <td>
                             <button onclick="app()">Aplicar Seleção</button>

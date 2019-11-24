@@ -1,3 +1,4 @@
+#define FASTLED_INTERNAL //remove annoying pragma messages
 #include <Adafruit_NeoPixel.h>
 #include <ESP8266WiFi.h>
 #include <ESP8266WebServer.h>
@@ -48,11 +49,18 @@ const uint32_t white = leds.Color(255, 255, 255);
 #define N_shimmer 20
 #define tempo_teste_fonte 3
 #define tempo_altofalantes_off 20
+#define Lsaw 10 // comprimento de leds do efeito saw
+#define nlrun 4 // comprimento da sequência do running
+#define decaimento 1.015 // decaimento do efeito scanner
+#define NL_twinkle 100 // número de leds que estarão acesos nos efeitos twinkle
+#define twinkle_rate_increase 1.2/SampleRate
+#define twinkle_increase_decrease_rate_ratio 8
+#define twinkle_fox_minimum_intensity 0.05
 
-#define SampleTime 1000/SampleRate
+#define SampleTime 1000/SampleRate // SampleTime em ms.
 
 // Tabelas de relação entre efeito e string
-const String tabela1[] = {"off", "uma", "duas", "tres", "arco", "onda", "retro", "alt", "degrade", "segue", "spark", "dissol", "fade", "shim",      "trifade", "trialt", "colorido"};
+const String tabela1[] = {"off", "uma", "duas", "tres", "arco", "onda", "retro", "alt", "degrade", "segue", "spark", "dissol", "fade", "shim", "trifade", "trialt", "colorido", "wipe_up", "wipe_down", "sweep", "saw_up", "saw_down", "blink_rainbow", "chase_rainbow_up", "chase_rainbow_down", "running_up", "running_down", "scanner", "twinkle_color", "twinkle_fox"};
 const String tabela2[] = {"off", "uma", "duas", "tres", "alt", "fade", "rgb", "arco", "circle", "rad", "onda"};
 
 // Definição dos efeitos geral
@@ -73,7 +81,20 @@ enum Efeito : byte {
   shimmer,
   trifade,
   trialt,
-  colorido
+  colorido,
+  wipe_up,
+  wipe_down,
+  sweep,
+  saw_up,
+  saw_down,
+  blink_rainbow,
+  chase_rainbow_up,
+  chase_rainbow_down,
+  running_up,
+  running_down,
+  scanner,
+  twinkle_color,
+  twinke_fox
 };
 
 // Definição dos efeitos estrela
@@ -158,17 +179,19 @@ uint32_t cores_retro[] = {      red, orange, green, blue};
 unsigned int tempos_retro[] = {2000,   1887,  2576, 2211};
 #define n_retro 4
 
-uint32_t cores[2][3][2], cor_temp;
+uint32_t cores[2][3][2], cor_temp, grad_cor[Lsaw], twinkle_hue[NL_twinkle];
 Efeito efeito;
 Estrela estrela;
-bool nef, nes, retorno_suave_dissolve, radial_in, aux_bool[2], musica_on;
+bool nef, nes, retorno_suave_dissolve, radial_in, aux_bool[2], musica_on, sentido_sweep, twinkle_decrease[NL_twinkle];
 volatile bool syncbool;
 unsigned long tref, t_off, aux_tref[2], t_off_fte;
 byte tempo_arvore, tempo_estrela, buf[10], aux_var, volume_mp3;
-unsigned int i, shimmer_num[N_shimmer], aux_int, aux_int_temp, di[NL];
+unsigned int i, shimmer_num[max(N_shimmer, NL_twinkle)], aux_int, aux_int_temp, di[NL];
 int temp_int;
-float shimmer_percent[N_shimmer];
+float percentual[NL], aux_f[2], twinkle_intensity[NL_twinkle];
 const byte NLE = (NE % 2) ? NE / 5 : (NE - 1) / 5;
+
+
 
 void(* resetFunc) (void) = 0; // função de reset
 
@@ -510,15 +533,15 @@ void loop(void) {
       if (nef) {
         switch (efeito) {
           case uma:
-            solido(1, false);
+            solido(1, false, false);
             nef = false;
             break;
           case duas:
-            solido(2, false);
+            solido(2, false, false);
             nef = false;
             break;
           case tres:
-            solido(3, false);
+            solido(3, false, false);
             nef = false;
             break;
           case degrade:
@@ -560,16 +583,58 @@ void loop(void) {
           case colorido:
             arvore_colorido();
             break;
+          case wipe_up:
+            arvore_wipe(true);
+            break;
+          case wipe_down:
+            arvore_wipe(false);
+            break;
+          case sweep:
+            if (arvore_wipe(sentido_sweep)) {
+              sentido_sweep = !sentido_sweep;
+              aux_f[0] = sentido_sweep ? 0.0 : NL;
+            }
+            break;
+          case saw_up:
+            arvore_saw(true);
+            break;
+          case saw_down:
+            arvore_saw(false);
+            break;
+          case blink_rainbow:
+            arvore_blink_rainbow();
+            break;
+          case chase_rainbow_up:
+            arvore_chase_rainbow(true);
+            break;
+          case chase_rainbow_down:
+            arvore_chase_rainbow(false);
+            break;
+          case running_up:
+            arvore_running(true);
+            break;
+          case running_down:
+            arvore_running(false);
+            break;
+          case scanner:
+            arvore_scanner();
+            break;
+          case twinkle_color:
+            arvore_twinkle_color(true);
+            break;
+          case twinke_fox:
+            arvore_twinkle_color(false);
+            break;
         }
       }
       if (nes) {
         switch (estrela) {
           case e_uma:
-            solido(1, true);
+            solido(1, true, false);
             nes = false;
             break;
           case e_rgb:
-            solido(3, true);
+            solido(3, true, false);
             nes = false;
             break;
           case e_rainbow:
@@ -669,7 +734,8 @@ void erro(Erros caso) {
   }
   leds.clear();
   leds.show();
-  byte led_uso = (caso == Wifi) ? led_Wifi : led_geral;
+  //byte led_uso = (caso == Wifi) ? led_Wifi : led_geral;
+  byte led_uso = led_Wifi;
   while (true) {
     digitalWrite(led_uso, 0);
     delay(ton);
@@ -769,13 +835,13 @@ uint32_t colorSlope(uint32_t c1, uint32_t c2, float percentual) {
   return temp;
 }
 
-void solido(byte n, bool estrela) {
+void solido(byte n, bool estrela, bool mostra) {
   if (estrela) {
     for (i = NL; i < NL + NE; i++) leds.setPixelColor(i, cores[1][i % n][0]);
   } else {
     for (i = 0; i < NL; i++) leds.setPixelColor(i, cores[0][i % n][0]);
   }
-  leds.show();
+  if (mostra) leds.show();
 }
 
 void shift_colors(byte linha, bool ciclo) {
@@ -871,11 +937,6 @@ void arvore_segue() {
   nef = false;
 }
 
-//void arvore_alternar() {
-//  aux_bool[0] = (tref / tempo_alternar) & 1;
-//  for (i = 0; i < NL; i++) leds.setPixelColor(i, (aux_bool[0] ^ (i & 1)) ? black : cores[0][aux_bool[0]][0]);
-//}
-
 void arvore_alt(byte n_cores) {
   aux_int = (tref / tempo_alternar) % n_cores;
   for (i = 0; i < NL; i++) leds.setPixelColor(i, (i % n_cores == aux_int) ? cores[0][aux_int][0] : black);
@@ -884,7 +945,7 @@ void arvore_alt(byte n_cores) {
 void arvore_fade(byte n_cores) {
   aux_int %= n_cores - 1;
   if (tref - aux_tref[0] <= (tempo_arvore * 1200)) {
-    cor_temp = colorSlope(cores[0][aux_int][0], cores[0][aux_int + 1][0], min(1.0, float(tref - aux_tref[0]) / float(tempo_arvore * 1000)));
+    cor_temp = colorSlope(cores[0][aux_int + 1][0], cores[0][aux_int][0], min(1.0, float(tref - aux_tref[0]) / float(tempo_arvore * 1000)));
     for (i = 0; i < NL; i++) leds.setPixelColor(i, cor_temp);
   } else {
     aux_tref[0] = tref;
@@ -896,15 +957,15 @@ void arvore_shimmer() {
   for (i = 0; i < N_shimmer; i++) {
     if (!shimmer_num[i] && !random(10)) {
       shimmer_num[i] = random(NL + 1);
-      shimmer_percent[i] = 0.0;
+      percentual[i] = 0.0;
     }
     if (shimmer_num[i]) {
-      shimmer_percent[i] += (i & 1) ? 0.04 : 0.02;
-      if (shimmer_percent[i] > 2.0) {
+      percentual[i] += (i & 1) ? 0.04 : 0.02;
+      if (percentual[i] > 2.0) {
         leds.setPixelColor(shimmer_num[i] - 1, cores[0][0][0]);
         shimmer_num[i] = 0;
       } else {
-        leds.setPixelColor(shimmer_num[i] - 1, colorSlope(cores[0][1][0], cores[0][0][0], (shimmer_percent[i] > 1.0) ? (float(shimmer_percent[i]) - 1.0) : (1.0 - float(shimmer_percent[i]))));
+        leds.setPixelColor(shimmer_num[i] - 1, colorSlope(cores[0][1][0], cores[0][0][0], (percentual[i] > 1.0) ? (percentual[i] - 1.0) : (1.0 - percentual[i])));
       }
     }
   }
@@ -935,10 +996,177 @@ void arvore_dissolve() {
       if (retorno_suave_dissolve) {
         shift_colors(0, false);
       } else {
-        solido(1, false);
+        solido(1, false, false);
       }
       aux_tref[0] = tref;
     }
+  }
+}
+
+bool arvore_wipe(bool sobe) {
+  bool mudou = false;
+  solido(1, false, false);
+  if (aux_f[0] < 0.0) aux_f[0] = 0.0;
+  if (aux_f[0] > NL) aux_f[0] = float(NL);
+  aux_f[1] = float(NL) / float(SampleRate * tempo_arvore);
+  int l1, l2;
+  l1 = floor(aux_f[0]);
+  if (l1 >= NL) l1 = NL - 1;
+  if (sobe) {
+    l2 = floor(aux_f[0] + aux_f[1]);
+    if (l2 >= NL - 1) {
+      l2 = NL - 1;
+      mudou = true;
+    }
+    for (i = l1; i <= l2; i++) leds.setPixelColor(i, cores[0][1][1]);
+    aux_f[0] += aux_f[1];
+    if (aux_f[0] >= NL) aux_f[0] = 0.0;
+  } else {
+    l2 = (aux_f[1] > aux_f[0]) ? 0 : floor(aux_f[0] - aux_f[1]);
+    if (l2 <= 0) {
+      l2 = 0;
+      mudou = true;
+    }
+    for (int ii = l1; ii >= l2; ii--) leds.setPixelColor(ii, cores[0][1][1]);
+    aux_f[0] -= aux_f[1];
+    if (aux_f[0] <= 0.0) aux_f[0] = float(NL);
+  }
+  return mudou;
+}
+
+void arvore_saw(bool sobe) {
+  aux_int_temp++;
+  if (aux_int_temp >= tempo_arvore) {
+    aux_int_temp = 0;
+    if (sobe) {
+      if (aux_int == 0) aux_int = Lsaw;
+      for (i = 1; i < (Lsaw - 1); i++) grad_cor[i] = colorSlope(cores[0][0][1], cores[0][1][1], float(i) / float(Lsaw - 1));
+      grad_cor[0] = cores[0][0][1];
+      grad_cor[Lsaw - 1] = cores[0][1][1];
+    } else {
+      aux_int %= Lsaw;
+      for (i = 1; i < (Lsaw - 1); i++) grad_cor[i] = colorSlope(cores[0][1][1], cores[0][0][1], float(i) / float(Lsaw - 1));
+      grad_cor[0] = cores[0][1][1];
+      grad_cor[Lsaw - 1] = cores[0][0][1];
+    }
+    for (i = 0; i < NL; i++) leds.setPixelColor(i, grad_cor[(aux_int + i) % Lsaw]);
+    if (sobe) {
+      aux_int--;
+    } else {
+      aux_int++;
+    }
+  }
+}
+
+void arvore_blink_rainbow() {
+  if (tref - aux_tref[0] >= 1000 * tempo_arvore) {
+    aux_tref[0] = tref;
+    cores[0][0][0] = hue2rgb(random(255));
+    solido(1, false, false);
+  }
+}
+
+void arvore_chase_rainbow(bool sobe) {
+  if (aux_f[0] < 0.0) aux_f[0] = 0.0;
+  if (aux_f[0] > NL) aux_f[0] = float(NL);
+  aux_int_temp = floor(aux_f[0]);
+  if (aux_int_temp > NL - 1) aux_int_temp = NL - 1;
+  leds.setPixelColor(aux_int_temp, cores[0][0][1]);
+  aux_f[1] = float(NL) / float(SampleRate * tempo_arvore);
+  float a = 2.0 * 256.0 / float(NL);
+  if (sobe) {
+    if (aux_int_temp > 0) leds.setPixelColor(aux_int_temp - 1, cores[0][1][1]);
+    if (aux_int_temp > 1) for (i = 0; i < aux_int_temp - 1; i++) leds.setPixelColor(i, hue2rgb(aux_int + (byte)(a * float(i))));
+    aux_f[0] += aux_f[1];
+    if (aux_f[0] >= NL) {
+      aux_f[0] = 0.0;
+      aux_int += 203;
+      aux_int %= 256;
+    }
+  } else {
+    if (aux_int_temp < (NL - 1)) leds.setPixelColor(aux_int_temp + 1, cores[0][1][1]);
+    if (aux_int_temp < (NL - 2)) for (int ii = NL - 1; ii > aux_int_temp + 1; ii--) leds.setPixelColor(ii, hue2rgb(aux_int + (byte)(a * float(ii))));
+    aux_f[0] -= aux_f[1];
+    if (aux_f[0] <= 0.0) {
+      aux_f[0] = float(NL);
+      aux_int += 53;
+      aux_int %= 256;
+    }
+  }
+}
+
+void arvore_running(bool sobe) {
+  aux_int_temp++;
+  if (aux_int_temp >= tempo_arvore) {
+    aux_int_temp = 0;
+    aux_int %= 2 * nlrun;
+    for (i = 0; i < NL; i++) leds.setPixelColor(i, cores[0][((i + aux_int) / nlrun) & 1][1]);
+    aux_int += (sobe) ? 2 * nlrun - 1 : 1;
+  }
+}
+
+void arvore_scanner() {
+  if (aux_f[0] < 0.0) aux_f[0] = 0.0;
+  if (aux_f[0] > NL) aux_f[0] = float(NL);
+  if (aux_bool[0]) {
+    aux_int++;
+    if (aux_int >= NL - 1) aux_bool[0] = false;
+  } else {
+    aux_int--;
+    if (aux_int <= 0) aux_bool[0] = true;
+  }
+  percentual[aux_int] = 1.0;
+  for (i = 0; i < NL; i++) {
+    leds.setPixelColor(i, colorSlope(cores[0][0][1], cores[0][1][1], percentual[i]));
+    percentual[i] /= decaimento;
+  }
+}
+
+void arvore_twinkle_color(bool com_cor) {
+  float intensidade_minima = 0.0;
+  if (com_cor) {
+    leds.clear();
+  } else {
+    intensidade_minima = twinkle_fox_minimum_intensity;
+    cores[0][0][0] = colorSlope(black, cores[0][0][1], twinkle_fox_minimum_intensity);
+    solido(1, false, false);
+  }
+  bool m;
+  for (i = 0; i < NL_twinkle; i++) {
+    m = true;
+    if (twinkle_decrease[i]) {
+      twinkle_intensity[i] -= twinkle_rate_increase;
+      if (twinkle_intensity[i] <= intensidade_minima) {
+        leds.setPixelColor(shimmer_num[i], (com_cor) ? black : cores[0][0][0]);
+        twinkle_intensity[i] = intensidade_minima;
+        m = false;
+        if (!random(30)) {
+          bool tem = false;
+          do {
+            shimmer_num[i] = random(NL);
+            tem = false;
+            for (int ii = 0; ii < NL_twinkle; ii++) {
+              if (shimmer_num[i] == shimmer_num[ii]) {
+                if (ii != i) {
+                  tem = true;
+                  break;
+                }
+              }
+            }
+          } while (tem);
+          twinkle_hue[i] = com_cor ? hue2rgb(random(256)) : colorSlope(cores[0][0][1], cores[0][1][1], float(random(512)) / 512.0);
+          twinkle_decrease[i] = false;
+          m = true;
+        }
+      }
+    } else {
+      twinkle_intensity[i] += twinkle_increase_decrease_rate_ratio * twinkle_rate_increase;
+      if (twinkle_intensity[i] >= 1.0) {
+        twinkle_intensity[i] = 1.0;
+        twinkle_decrease[i] = true;
+      }
+    }
+    if (m) leds.setPixelColor(shimmer_num[i], colorSlope(black, twinkle_hue[i], twinkle_intensity[i]));
   }
 }
 
@@ -1041,28 +1269,68 @@ void recebe_arvore() {
   switch (efeito) {
     case nenhum:
       cores[0][0][0] = black;
-      solido(1, false);
-      //nef = false;
+      solido(1, false, true);
+      nef = false;
       break;
     case uma:
     case duas:
     case tres:
-      solido(efeito, false);
-      //nef = false;
+      solido(efeito, false, true);
+      nef = false;
       break;
     case dissolve:
-      solido(1, false);
+      solido(1, false, true);
       montaVetor();
       aux_int_temp = tempo_arvore * 1000 / NL;
       aux_tref[0] = millis();
       break;
     case fade:
-      solido(1, false);
+      solido(1, false, true);
       aux_tref[0] = millis();
       break;
     case shimmer:
-      solido(1, false);
+      solido(1, false, true);
       for (i = 0; i < N_shimmer; i++) shimmer_num[i] = 0;
+      break;
+    case sweep:
+      sentido_sweep = true;
+    case wipe_up:
+      aux_f[0] = 0;
+      break;
+    case wipe_down:
+      aux_f[0] = NL;
+      break;
+    case saw_up:
+    case saw_down:
+      aux_int = 0;
+      aux_int_temp = 0;
+      break;
+    case chase_rainbow_up:
+      aux_f[0] = 0.0;
+      aux_int = 0;
+      leds.clear();
+      break;
+    case chase_rainbow_down:
+      aux_f[0] = float(NL);
+      aux_int = 0;
+      leds.clear();
+      break;
+    case running_up:
+    case running_down:
+      aux_int = 0;
+      aux_int_temp = 0;
+      break;
+    case scanner:
+      for (i = 0; i < NL; i++) percentual[i] = 0.0;
+      aux_bool[0] = true;
+      aux_f[0] = 0.0;
+      break;
+    case twinkle_color:
+    case twinke_fox:
+      for (i = 0; i < NL_twinkle; i++) {
+        twinkle_decrease[i] = true;
+        twinkle_intensity[i] = 0.0;
+      }
       break;
   }
 }
@@ -1072,17 +1340,17 @@ void recebe_estrela() {
   switch (estrela) {
     case e_nenhum:
       cores[1][0][0] = black;
-      solido(1, true);
-      //nes = false;
+      solido(1, true, true);
+      nes = false;
       break;
     case e_uma:
     case e_duas:
     case e_tres:
-      solido(estrela, true);
-      //nes = false;
+      solido(estrela, true, true);
+      nes = false;
       break;
     case e_fade:
-      solido(1, true);
+      solido(1, true, true);
       break;
     case e_rgb:
       cores[1][0][0] = green;

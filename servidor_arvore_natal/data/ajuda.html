@@ -78,6 +78,19 @@
                 <li><i>shim</i> -> efeito "shimmer" de N leds de <i>cor2</i> no fundo de <i>cor1</i> (N sugerido = 20)</li>
                 <li><i>dissolve</i>* -> efeito de dissolução da <i>cor1</i> para a <i>cor2</i> em X segundos</li>
                 <li><i>dissol</i>* -> efeito de dissolução da <i>cor1</i> para a <i>cor2</i> em X segundos, com retorno abrupto para a <i>cor1</i> no final</li>
+                <li><i>wipe_up</i>* -> base na <i>cor1</i> e, de um em um, vai subindo na <i>cor2</i>, em X segundos</li>
+                <li><i>wipe_down</i>* -> base na <i>cor1</i> e, de um em um, vai descendo na <i>cor2</i>, em X segundos</li>
+                <li><i>sweep</i>* -> base na <i>cor1</i> e, de um em um, vai subindo na <i>cor2</i>, em X segundos, depois vai descendo no mesmo tempo</li>
+                <li><i>blink_rainbow</i>* -> alterna, entre cores aleatórias, a árvore toda, a cada X segundos<i>cor1</i> no final</li>
+                <li><i>chase_rainbow_up</i>* -> efeito sequencial com primeiro led na <i>cor1</i> e segundo na <i>cor2</i>, mantendo o efeito arco-íris depois da passagem, subindo, em X segundos</li>
+                <li><i>chase_rainbow_down</i>* -> efeito sequencial com primeiro led na <i>cor1</i> e segundo na <i>cor2</i>, mantendo o efeito arco-íris depois da passagem, descendo, em X segundos</li>
+                <li><i>running_up</i>* -> efeito com <i>cor1</i> e <i>cor2</i> de 4 em 4, subindo, com velocidade inversamente proporcional ao tempo</li>
+                <li><i>running_down</i>* -> efeito com <i>cor1</i> e <i>cor2</i> de 4 em 4, descendo, com velocidade inversamente proporcional ao tempo</li>
+                <li><i>saw_up</i>* -> como o efeito <i>running_up</i>, mas com retorno gradual</li>
+                <li><i>saw_down</i>* -> como o efeito <i>running_down</i>, mas com retorno gradual</li>
+                <li><i>scanner</i> -> efeito como o <i>sweep</i>, mas com retorno gradual para a <i>cor1</i></li>
+                <li><i>twinkle_color</i> -> efeito de led aleatório em cor aleatória</li>
+                <li><i>twinkle_fox</i> -> efeito de base na <i>cor1</i> bem fraca, aparecendo leds aleatórios numa cor aleatória entre <i>cor1</i> e <i>cor2</i></li>
             </ul>
             *Os efeitos marcados requerem o tempo associado. Se não for informado, será assumido o tempo de 1s.
             </li>

@@ -138,6 +138,13 @@
         <li><i>http://www.arvoredenatal.local/comandos?musica=3</i> -> toca a terceira música da lista de músicas.</li>
         <li><i>http://www.arvoredenatal.local/musicas?json={"1":"jingle%20bells","2":"merry%20christmas",...}</i> -> atualiza a lista de músicas para a primeira sendo "jingle bells", a segunda para "merry christmas" e assim por diante (espaços devem ser substituidos por "%20").</li>
     </ul>
+    <br>
+    Envio de dados via UDP:<br><br>
+    Se os efeitos da árvore e da estrela forem <i>off</i>, a árvore pode receber as intensidades dos leds via UDP.<br>
+    Para tanto, deve se enviar os dados no formato [<i>led_index_high_byte, led_index_low_byte, cor_red, cor_green, cor_blue</i>] para cada led que se deseja alterar.<br>
+    A porta utilizada é a UDP 1000.<br>
+    Se, das informações enviadas, todas as cores forem zero (mesmo que seja a alteração de um único led), a árvore e a estrela se apagarão. Se você deseja somente apagar alguns leds, mas não apagar a árvore inteira, envie pelo menos um dos leds que deseja apagar com alguma cor não nula, depois envie cor nula para o led no mesmo pacote de dados.<br>
+    <br>
     <button class="ajuda" onclick="location.href='/';">Interface Gráfica</button>
 </body>
 </html>

@@ -7,6 +7,8 @@
 #include <SoftwareSerial.h>
 #include <WiFiManager.h>
 #include <FastLED.h>
+#include <WiFiUdp.h>
+
 
 #ifdef ESP8266
 #define min _min
@@ -58,6 +60,7 @@ const uint32_t white = leds.Color(255, 255, 255);
 #define twinkle_fox_minimum_intensity 0.05
 
 #define SampleTime 1000/SampleRate // SampleTime em ms.
+#define porta_udp 1000
 
 // Tabelas de relação entre efeito e string
 const String tabela1[] = {"off", "uma", "duas", "tres", "arco", "onda", "retro", "alt", "degrade", "segue", "spark", "dissol", "fade", "shim", "trifade", "trialt", "colorido", "wipe_up", "wipe_down", "sweep", "saw_up", "saw_down", "blink_rainbow", "chase_rainbow_up", "chase_rainbow_down", "running_up", "running_down", "scanner", "twinkle_color", "twinkle_fox"};
@@ -182,10 +185,10 @@ unsigned int tempos_retro[] = {2000,   1887,  2576, 2211};
 uint32_t cores[2][3][2], cor_temp, grad_cor[Lsaw], twinkle_hue[NL_twinkle];
 Efeito efeito;
 Estrela estrela;
-bool nef, nes, retorno_suave_dissolve, radial_in, aux_bool[2], musica_on, sentido_sweep, twinkle_decrease[NL_twinkle];
+bool nef, nes, retorno_suave_dissolve, radial_in, aux_bool[2], musica_on, sentido_sweep, twinkle_decrease[NL_twinkle], externo;
 volatile bool syncbool;
 unsigned long tref, t_off, aux_tref[2], t_off_fte;
-byte tempo_arvore, tempo_estrela, buf[10], aux_var, volume_mp3;
+byte tempo_arvore, tempo_estrela, buf[10], aux_var, volume_mp3, buf_udp[5 * (NL + NE)];
 unsigned int i, shimmer_num[max(N_shimmer, NL_twinkle)], aux_int, aux_int_temp, di[NL];
 int temp_int;
 float percentual[NL], aux_f[2], twinkle_intensity[NL_twinkle];
@@ -196,6 +199,8 @@ const byte NLE = (NE % 2) ? NE / 5 : (NE - 1) / 5;
 void(* resetFunc) (void) = 0; // função de reset
 
 ESP8266WebServer server(80);
+WiFiUDP udp;
+
 
 String lerArquivo(String filename, String msgDefault) {
   String message = msgDefault;
@@ -494,6 +499,7 @@ void setup(void) {
   });
   server.begin();
   Serial.println("Servidor HTTP inicializado.");
+  udp.begin(porta_udp);
   digitalWrite(led_Wifi, 1);
   if (SPIFFS.begin()) {
     Serial.println("File system working ok.");
@@ -519,16 +525,42 @@ void setup(void) {
 void loop(void) {
   server.handleClient();
   MDNS.update();
+  int pacote_size = udp.parsePacket();
   if (efeito == segue && syncbool) {
     nef = true;
     syncbool = false;
   }
+  if (pacote_size) {
+    int len = udp.read(buf_udp, 5 * (NL + NE));
+    externo = false;
+    if (efeito == nenhum && estrela == e_nenhum) {
+      for (i = 0; i < len; i += 5) {
+        temp_int = ((int)buf_udp[i] << 8) + (int)buf_udp[i + 1];
+        if (temp_int < NL) {
+          cor_temp = ((unsigned long)buf_udp[i + 2] << 16) + ((unsigned long)buf_udp[i + 3] << 8) + (unsigned long)buf_udp[i + 4];
+          nef = true;
+        } else {
+          cor_temp = ((unsigned long)buf_udp[i + 3] << 16) + ((unsigned long)buf_udp[i + 2] << 8) + (unsigned long)buf_udp[i + 4];
+          nes = true;
+        }
+        externo = externo || cor_temp;
+        leds.setPixelColor(temp_int, cor_temp);
+      }
+      if (!externo) {
+        leds.clear();
+        leds.show();
+      }
+    }
+  }
 #ifdef power_on
-  if (!fonte() && (efeito != nenhum || estrela != e_nenhum)) fonte(1);
+  if (!fonte() && (efeito != nenhum || estrela != e_nenhum || externo)) fonte(1);
 #endif
+
+  if (externo) leds.show();
 
   if (millis() - tref >= SampleTime) {
     tref = millis();
+    if (efeito != nenhum || estrela != e_nenhum) externo = false;
     if ((efeito != nenhum || estrela != e_nenhum) && (nef || nes) && fonte()) {
       if (nef) {
         switch (efeito) {
@@ -663,7 +695,7 @@ void loop(void) {
 
 #ifdef power_on
   // Se a fonte estiver ligada por mais de 10s sem efeito, desliga a fonte
-  if (!efeito && !estrela && digitalRead(power_on)) {
+  if (!efeito && !estrela && digitalRead(power_on) && !externo) {
     if (millis() - t_off > (1000 * tempo_fonte_off)) digitalWrite(power_on, 0);
   } else t_off = millis();
 #endif
